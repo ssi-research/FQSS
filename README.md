@@ -50,16 +50,6 @@ Modify the corresponding YAML file (under [`configs`](/configs)) with the correc
 
 #### Generate Datasets:
 
-- Musdb18HQ:
-  - Download the dataset [MUSDB18-HQ](https://zenodo.org/records/3338373). 
-  - For ConvTasNet:
-    - Set the dataset path in `train_dir` within `dataset_cfg`.
-    - Set the dataset path in `test_dir` within `testing_cfg`.
-
-  - For HTDemucs:
-    - Set the dataset path in `test_dir` within `testing_cfg`.
-    - Set the dataset path in `musdb` within `dset`.
-
 - LibriMix:
   - Generate the Librimix dataset according to [Librimix](https://github.com/JorisCos/LibriMix). Use the Libri2Mix 16kHz and 'min' version of the dataset. The current configurations use a resample of 0.5, to match the reported experiments setup of 8kHz in the paper. Equivalently, you can create Libri2Mix 8kHz and change the configured resample to 1 by adjusting the 'resample' value under 'dataset_cfg' in the experiment configuration under 'configs'.
   - Metadata csv files should be created in the `storage_dir` (the path you used for running `generate_librimix.sh`).
@@ -74,6 +64,16 @@ Modify the corresponding YAML file (under [`configs`](/configs)) with the correc
   - For Sepformer:
     - Set the `Libri2Mix` dir path that was generated in `storage_dir` in `data_folder` within `dataset_cfg`.
     - Set the `Libri2Mix/wav16k/min/test` dir path that was generated in `storage_dir` in `test_dir` within `testing_cfg`
+
+- Musdb18HQ:
+  - Download the dataset [MUSDB18-HQ](https://zenodo.org/records/3338373). 
+  - For ConvTasNet:
+    - Set the dataset path in `train_dir` within `dataset_cfg`.
+    - Set the dataset path in `test_dir` within `testing_cfg`.
+
+  - For HTDemucs:
+    - Set the dataset path in `test_dir` within `testing_cfg`.
+    - Set the dataset path in `musdb` within `dset`.
 
 #### Set Pretrained Model Path:
 
