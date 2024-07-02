@@ -1,0 +1,46 @@
+# ###########################################
+# Model: ConvTasNet for music separation
+# Dataset : musdbhq
+# Env: tasnet
+# ###########################################
+work_dir: /dir/path/for/training/outputs/including/the/quantized/model
+model_cfg:
+  name: ConvTasNetMusic
+  model_path: /path/of/quantized/trained/model/for/validation.pth
+  quantization:
+    qat: True
+    gradient_based: True
+    weight_quant: True
+    weight_n_bits: 8
+    act_quant: True
+    act_n_bits: 8
+    in_quant: False
+    in_act_n_bits: 8
+    out_quant: True
+    out_act_n_bits: 8
+    n_splitter: 2
+    n_combiner: 2
+    observer: True # True for training from pretrained, False resume training from checkpoint
+dataset_cfg:
+  name: musdbhq
+  task: mus_sep
+  train_dir: /storage_dir/musdb18hq
+  metadata: train_env/tasnet_musdbhq/musdbhq.json
+  sample_rate: 44100
+  segment_samples: 80000
+  data_stride: 44100
+training_cfg:
+  epochs: 25
+  batch_size: 8
+  num_workers: 4
+  pretrained: /path/of/pretrained/float/model.pth
+  wandb: False
+  seed: 0
+  kd_lambda: 0.1
+  optim:
+    lr: 0.0001
+testing_cfg:
+  test_dir: /storage_dir/musdb18hq
+  segment_samples: 352800 # 8 * 44100
+  overlap: 0.25
+

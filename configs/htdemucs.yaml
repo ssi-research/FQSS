@@ -1,0 +1,168 @@
+# ###########################################
+# Model: HTDemucs for music separation
+# Dataset : MusdbHQ
+# Env: htdemucs
+# ###########################################
+defaults:
+  - _self_
+  - override hydra/hydra_logging: colorlog
+  - override hydra/job_logging: colorlog
+
+work_dir: /dir/path/for/training/outputs/including/the/quantized/model
+model: htdemucs  # see demucs/train.py for the possibilities, and config for each model hereafter.
+model_cfg:
+  name: HTDemucs
+  model_path: /path/of/quantized/trained/model/for/validation.pth
+  quantization:
+    qat: True
+    gradient_based: True
+    weight_quant: True
+    weight_n_bits: 8
+    act_quant: True
+    act_n_bits: 8
+    in_quant: False
+    in_act_n_bits: 8
+    out_quant: True
+    out_act_n_bits: 8
+    n_splitter: 2
+    n_combiner: 2
+    observer: True # True for training from pretrained, False resume training from checkpoint
+dataset_cfg:
+  name: musdbhq
+testing_cfg:
+  test_dir: /storage_dir/musdb18hq
+  segment_samples: 343980 # 7.8 * 44100
+  overlap: 0.25
+  NSDR: False
+
+dora:
+  dir: /dir/path/for/training/outputs/including/the/quantized/model
+  exclude: ["misc.*", "slurm.*", 'test.reval', 'flag', 'dset.backend']
+
+dummy:
+dset:
+  musdb: /storage_dir/musdb18hq
+  musdb_samplerate: 44100
+  use_musdb: true   # set to false to not use musdb as training data.
+  wav:  # path to custom wav dataset
+  wav2:  # second custom wav dataset
+  segment: 10
+  shift: 1
+  train_valid: false
+  full_cv: true
+  samplerate: 44100
+  channels: 2
+  normalize: true
+  metadata: ./train_env/htdemucs_musdbhq
+  sources: ['drums', 'bass', 'other', 'vocals']
+  valid_samples: # valid dataset size
+  backend: null   # if provided select torchaudio backend.
+
+test:
+  save: False
+  best: True
+  workers: 2
+  every: 1000
+  split: true
+  shifts: 0
+  overlap: 0.25
+  sdr: false
+  metric: 'loss'  # metric used for best model selection on the valid set, can also be nsdr
+  nonhq:   # path to non hq MusDB for evaluation
+
+epochs: 90
+batch_size: 32
+max_batches:  # limit the number of batches per epoch, useful for debugging
+              # or if your dataset is gigantic.
+optim:
+  lr: 0.0003
+  momentum: 0.9
+  beta2: 0.999
+  loss: l1    # l1 or mse
+  optim: adam
+  weight_decay: 0
+  clip_grad: 0
+
+seed: 42
+debug: false
+valid_apply: true
+flag:
+save_every:
+weights: [1., 1., 1., 1.]  # weights over each source for the training/valid loss.
+kd_lambda: 0.1
+
+augment:
+  shift_same: false
+  repitch:
+    proba: 0.2
+    max_tempo: 12
+  remix:
+    proba: 1
+    group_size: 4
+  scale:
+    proba: 1
+    min: 0.25
+    max: 1.25
+  flip: true
+
+# https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th -> htdemucs + 800 songs
+# https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/f7e0c4bc-ba3fe64a.th -> htdemucs_ft + 800 songs
+# https://dl.fbaipublicfiles.com/demucs/mdx_final/c511e2ab-fe698775.th -> hdemucs + mix_ds
+
+#pretrained:  https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th
+pretrained: /path/of/pretrained/float/model.pth
+use_pretrained_weights: True
+
+
+continue_from:  # continue from other XP, give the XP Dora signature.
+continue_pretrained:  # signature of a pretrained XP, this cannot be a bag of models.
+pretrained_repo:   # repo for pretrained model (default is official AWS)
+continue_best: true
+continue_opt: false
+
+misc:
+  num_workers: 10
+  num_prints: 4
+  show: false
+  verbose: false
+
+# List of decay for EMA at batch or epoch level, e.g. 0.999.
+# Batch level EMA are kept on GPU for speed.
+ema:
+  epoch: []
+  batch: []
+
+use_train_segment: true  # to remove
+model_segment:  # override the segment parameter for the model, usually 4 times the training segment.
+
+htdemucs: # see demucs/htdemucs.py for a detailed description
+  nfft: 4096
+
+svd:  # see svd.py for documentation
+  penalty: 0
+  min_size: 0.1
+  dim: 1
+  niters: 2
+  powm: false
+  proba: 1
+  conv_only: false
+  convtr: false
+  bs: 1
+
+quant:  # quantization hyper params
+  diffq:    # diffq penalty, typically 1e-4 or 3e-4
+  qat:      # use QAT with a fixed number of bits (not as good as diffq)
+  min_size: 0.2
+  group_size: 8
+
+slurm:
+  time: 4320
+  constraint: volta32gb
+  setup: ['module load cudnn/v8.4.1.50-cuda.11.6 NCCL/2.11.4-6-cuda.11.6 cuda/11.6']
+
+# Hydra config
+hydra:
+  job_logging:
+    formatters:
+      colorlog:
+        datefmt: "%m-%d %H:%M:%S"

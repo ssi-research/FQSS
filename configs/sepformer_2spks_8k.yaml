@@ -1,0 +1,134 @@
+# ###########################################
+# Model: Sepformer for speech separation
+# Dataset: Libri2mix
+# Env: speechbrain
+# ###########################################
+work_dir: /dir/path/for/training/outputs/including/the/quantized/model
+model_cfg:
+  name: Sepformer
+  model_path: /path/of/quantized/trained/model/for/validation.pth
+  n_src: 2
+  kernel_size: 16
+  stride: 8
+  quantization:
+    qat: True
+    gradient_based: True
+    weight_quant: True
+    weight_n_bits: 8
+    act_quant: True
+    act_n_bits: 8
+    in_quant: False
+    in_act_n_bits: 8
+    out_quant: True
+    out_act_n_bits: 8
+    n_splitter: 2
+    n_combiner: 2
+    observer: True # True for training from pretrained, False resume training from checkpoint
+dataset_cfg:
+  name: librimix
+  task: sep_clean
+  data_folder: /storage_dir/Libri2Mix
+  skip_prep: False # Skip data prepare
+  sample_rate: 16000
+  resample: 0.5
+  noisy: False
+  augmentation:
+    enable: False
+    distribution: uniform
+    param0: -10
+    param1: 10
+testing_cfg:
+  test_dir: /storage_dir/Libri2Mix/wav16k/min/test
+  overlap: 0.25
+
+# -------------------------------------------------
+# Training parameters
+# -------------------------------------------------
+N_epochs: 60
+batch_size: 1
+lr: 0.00015
+clip_grad_norm: 5
+loss_upper_lim: 999999  # this is the upper limit for an acceptable loss
+limit_training_signal_len: True # if True, the training sequences are cut to a specified length
+training_signal_len: 32000 # 4 second
+auto_mix_prec: True # Set it to True for mixed precision
+test_only: False
+noprogressbar: False
+save_audio: False # Save estimated sources on disk
+ckpt_interval_minutes: 60
+train_log: !ref <work_dir>/train_log.txt
+save_folder: !ref <work_dir>/save
+use_wham_noise: !ref <dataset_cfg[noisy]>
+seed: 1234
+kd_lambda: 0.1
+num_spks: !ref <model_cfg[n_src]>
+
+# Loss thresholding
+threshold_byloss: True
+threshold: -30
+
+# Dataloader options
+dataloader_opts:
+    batch_size: !ref <batch_size>
+    num_workers: 0
+
+train_logger: !new:speechbrain.utils.train_logger.FileTrainLogger
+    save_file: !ref <train_log>
+
+optimizer: !name:torch.optim.Adam
+    lr: !ref <lr>
+    weight_decay: 0
+loss: !name:speechbrain.nnet.losses.get_si_snr_with_pitwrapper
+loss_kd: !name:train_env.speechbrain_librimix.wsdr.get_w_si_snr_with_pitwrapper
+
+lr_scheduler: !new:speechbrain.nnet.schedulers.ReduceLROnPlateau
+    factor: 0.5
+    patience: 3
+    dont_halve_until_epoch: 20
+epoch_counter: !new:speechbrain.utils.epoch_loop.EpochCounter
+    limit: !ref <N_epochs>
+
+# -----------------------------------------
+# Data augmentation
+# -----------------------------------------
+use_wavedrop: False
+use_speedperturb: True
+use_rand_shift: False
+min_shift: -8000
+max_shift: 8000
+
+speedperturb: !new:speechbrain.lobes.augment.TimeDomainSpecAugment
+    perturb_prob: 1.0
+    drop_freq_prob: 0.0
+    drop_chunk_prob: 0.0
+    sample_rate: 8000
+    speeds: [95, 100, 105]
+
+wavedrop: !new:speechbrain.lobes.augment.TimeDomainSpecAugment
+    perturb_prob: 0.0
+    drop_freq_prob: 1.0
+    drop_chunk_prob: 1.0
+    sample_rate: 8000
+
+# -----------------------------------------
+# Specifying the network
+# -----------------------------------------
+Sepformer: !new:quantization.qat.models.sepformerq.SepformerQ
+    n_spks: !ref <model_cfg[n_src]>
+    kernel_size: !ref <model_cfg[kernel_size]>
+    stride: !ref <model_cfg[stride]>
+modules:
+  model: !ref <Sepformer>
+checkpointer: !new:speechbrain.utils.checkpoints.Checkpointer
+    checkpoints_dir: !ref <save_folder>
+    recoverables:
+        model: !ref <Sepformer>
+        counter: !ref <epoch_counter>
+
+# If you do not want to use the pretrained model you can simply comment/delete pretrained_separator field.
+pretrained_separator: !new:speechbrain.utils.parameter_transfer.Pretrainer
+    collect_in: !ref <save_folder>
+    loadables:
+        model: !ref <Sepformer>
+    paths:
+        model: /path/of/pretrained/float/model.pth

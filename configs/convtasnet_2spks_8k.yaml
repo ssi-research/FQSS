@@ -1,0 +1,58 @@
+# ###########################################
+# Model: ConvTasNet for speech separation
+# Dataset: Libri2mix
+# Env: asteroid
+# ###########################################
+work_dir: /dir/path/for/training/outputs/including/the/quantized/model
+model_cfg:
+  name: ConvTasNet
+  model_path: /path/of/quantized/trained/model/for/validation.pth
+  n_src: 2
+  kernel_size: 16
+  stride: 8
+  quantization:
+    qat: True
+    gradient_based: True
+    weight_quant: True
+    weight_n_bits: 8
+    act_quant: True
+    act_n_bits: 8
+    in_quant: False
+    in_act_n_bits: 8
+    out_quant: True
+    out_act_n_bits: 8
+    n_splitter: 2
+    n_combiner: 2
+    observer: True # True for training from pretrained, False resume training from checkpoint
+dataset_cfg:
+  name: librimix
+  task: sep_clean
+  train_dir: storage_dir/wav16k/min/train-360/with/csv/metadata/files
+  valid_dir: storage_dir/wav16k/min/dev/with/csv/metadata/files
+  sample_rate: 16000
+  resample: 0.5
+  n_src: 2
+  noisy: False
+  segment: 3
+  augmentation:
+    enable: False
+    distribution: uniform
+    param0: -10
+    param1: 10
+training_cfg:
+  epochs: 50
+  batch_size: 2
+  num_workers: 4
+  half_lr: True
+  early_stop: True
+  pretrained:  /path/of/pretrained/float/model.pth
+  wandb: False
+  seed: 0
+  kd_lambda: 0.1
+  optim:
+    optimizer: adam
+    lr: 0.001
+    weight_decay: 0.0
+testing_cfg:
+  test_dir: /storage_dir/Libri2Mix/wav16k/min/test
+  overlap: 0.25
