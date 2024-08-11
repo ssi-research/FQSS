@@ -1,5 +1,8 @@
 # FQSS: Fully Quantized Neural Networks for Audio Source Separation
 
+## Paper (IEEE Open Journal of Signal Processing 2024)
+https://ieeexplore.ieee.org/document/10591369
+
 ## Abstract
 Deep neural networks have shown state-of-the-art results in audio source separation tasks in recent years. However, deploying such networks, especially on edge devices, is challenging due to memory and computation requirements. In this work, we focus on quantization, a leading approach for addressing these challenges. We start with a theoretical and empirical analysis of the signal-to-distortion ratio (SDR) in the presence of quantization noise, which presents a fundamental limitation in audio source separation tasks. These analyses show that quantization noise mainly affects performance when the model produces high SDRs. We empirically validate the theoretical insights and illustrate them on audio source separation models. In addition, the empirical analysis shows a high sensitivity to activations quantization, especially to the network's input and output signals. Following the analysis, we propose Fully Quantized Source Separation (FQSS), a quantization-aware training (QAT) method for audio source separation tasks. FQSS introduces a novel loss function based on knowledge distillation that considers quantization-sensitive samples during training and handles the quantization noise of the input and output signals. We validate the efficiency of our method in both time and frequency domains. Finally, we apply FQSS to several architectures (CNNs, LSTMs, and Transformers) and show negligible degradation compared to the full-precision baseline models. 
 
@@ -125,6 +128,23 @@ Replace configs/configuration.yaml with the specific configuration file used for
 | HTDemucs [4]   |  7.51 |             6.83 |      7.43 |
 
 
+## Citation
+
+If you find this project useful in your research, please consider cite:
+
+```BibTeX
+@ARTICLE{10591369,
+  author={Cohen, Elad and Habi, Hai Victor and Peretz, Reuven and Netzer, Arnon},
+  journal={IEEE Open Journal of Signal Processing}, 
+  title={Fully Quantized Neural Networks for Audio Source Separation}, 
+  year={2024},
+  volume={5},
+  number={},
+  pages={926-933},
+  keywords={Quantization (signal);Task analysis;Source separation;Analytical models;Training;Degradation;Computational modeling;Source separation;quantization;DNN;SDR;compression;knowledge distillation},
+  doi={10.1109/OJSP.2024.3425287}}
+```
+****
 
 ## References
 [1] https://arxiv.org/pdf/1809.07454
